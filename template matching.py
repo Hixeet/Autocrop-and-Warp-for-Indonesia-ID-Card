@@ -32,7 +32,7 @@ def auto_crop_blue(image):
     return cropped_image
 
 # Read the image
-img = cv2.imread("5.jpeg")
+img = cv2.imread("img.jpeg")
 
 # Auto crop the image to extract the blue region
 cropped_img = auto_crop_blue(img)
@@ -42,7 +42,7 @@ resized_img = cv2.resize(cropped_img, (780, 600))
 
 # Convert the images to grayscale
 resized_gray = cv2.cvtColor(resized_img, cv2.COLOR_BGR2GRAY)
-template_gray = cv2.imread('KTP_.jpg', 0)
+template_gray = cv2.imread('template.jpg', 0)
 template_resized = cv2.resize(template_gray, (0, 0), fx=0.9, fy=1.1)
 
 h, w = template_resized.shape
