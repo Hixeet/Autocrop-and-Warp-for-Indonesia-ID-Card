@@ -26,5 +26,4 @@ Prasyarat
 Cara Menggunakan
 Pastikan Anda telah menginstal prasyarat yang disebutkan di atas.
 Simpan gambar KTP yang ingin Anda proses dalam repositori ini atau ubah path gambar di kode sesuai dengan lokasi gambar Anda.
-Jalankan kode Python untuk melakukan autocropping dan warping dengan menjalankan Autocrop and Warp for Indonesia ID Card
-.py.
+Jalankan kode Python untuk melakukan autocropping dan warping dengan menjalankan Autocrop and Warp for Indonesia ID Card.py.
