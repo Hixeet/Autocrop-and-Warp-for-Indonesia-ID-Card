@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-image = cv2.imread('KTP.jpeg')
+image = cv2.imread("KTP.jpg")
 
 b, g, r = cv2.split(image)
 
@@ -79,8 +79,11 @@ elif 96 <= mean_value_b <= 115:
 elif 116 <= mean_value_b <= 145:
     threshold_value = 107
     threshold_value_r = 180
+elif 146 <= mean_value_b <= 160:
+    threshold_value = 110
+    threshold_value_r = 180
 else:
-    threshold_value = 108
+    threshold_value = 126
     threshold_value_r = 190
 
 _, crop_threshold_b = cv2.threshold(blur_frame_b, threshold_value, 255, cv2.THRESH_BINARY)
@@ -178,73 +181,50 @@ hasil_coordinates = find_nearest_coordinates(hasil)
 image_array = dilate
 height, width = image_array.shape
 
-min_x_same_intensity = width
-min_y_same_intensity = height
-for y in range(height):
-    for x in range(width):
-        # Periksa jika nilai intensitas grayscale sama dengan point (min_x_0, min_y_0)
+min_x_same_intensity = min_x_0
+min_y_same_intensity = min_y_0
+for x in range(min_x_0+10, 0, -1):
+    for y in range(min_y_0+10, 0, -1):
         if image_array[y, x] == image_array[min_y_0, min_x_0]:
-            # Hitung jumlah kordinat terkecil
             sum_coordinates = x + y
-            # Update koordinat terkecil jika ditemukan nilai intensitas grayscale yang lebih kecil dari sebelumnya
             if sum_coordinates < min_x_same_intensity + min_y_same_intensity:
                 min_x_same_intensity = x
                 min_y_same_intensity = y
 
-# Loop untuk mencari koordinat terkecil yang memiliki intensitas yang sama dengan point (min_x_0w, min_y_0w) pada bagian kanan atas
 min_x_same_intensity_w0 = min_x_0w 
 min_y_same_intensity_w0 = min_y_0w
 for x in range(min_x_0w-10, width):
-    for y in range(min_y_0w+10, -1, -1):
-        # Periksa jika nilai intensitas grayscale sama dengan point (min_x_0w, min_y_0w)
+    for y in range(min_y_0w+10, 0, -1):
         if image_array[y, x] == image_array[min_y_0w, min_x_0w]:
-            # Hitung jumlah kordinat terkecil
             sum_coordinates = (width - x) + y
-            # Update koordinat terkecil jika ditemukan nilai intensitas grayscale yang lebih kecil dari sebelumnya
             if sum_coordinates < (width - min_x_same_intensity_w0) + min_y_same_intensity_w0:
                 min_x_same_intensity_w0 = x
                 min_y_same_intensity_w0 = y
 
-# Loop untuk mencari koordinat terkecil yang memiliki intensitas yang sama dengan point (min_x_0w, min_y_0w) pada bagian kiri Bawah
 min_x_same_intensity_h0 = min_x_h0 
 min_y_same_intensity_h0 = min_y_h0
-for x in range(min_x_h0+10, -1, -1):
+for x in range(min_x_h0+10, 0, -1):
     for y in range(min_y_h0-10, height):
-        # Periksa jika nilai intensitas grayscale sama dengan point (min_x_0w, min_y_0w)
         if image_array[y, x] == image_array[min_y_h0, min_x_h0]:
-            # Hitung jumlah kordinat terkecil
             sum_coordinates = x + (height - y)
-            # Update koordinat terkecil jika ditemukan nilai intensitas grayscale yang lebih kecil dari sebelumnya
             if sum_coordinates < min_x_same_intensity_h0 + (height - min_y_same_intensity_h0):
                 min_x_same_intensity_h0 = x
                 min_y_same_intensity_h0 = y
 
-# Loop untuk mencari koordinat terkecil yang memiliki intensitas yang sama dengan point (min_x_0w, min_y_0w) pada bagian kanan bawah
 min_x_same_intensity_hw = min_x_hw 
 min_y_same_intensity_hw = min_y_hw
-for x in range(min_x_hw-10, width):
-    for y in range(min_y_hw-10, height):
-        # Periksa jika nilai intensitas grayscale sama dengan point (min_x_0w, min_y_0w)
+for x in range(min_x_hw-10, width, +1):
+    for y in range(min_y_hw-10, height, +1):
         if image_array[y, x] == image_array[min_y_hw, min_x_hw]:
-            # Hitung jumlah kordinat terkecil
             sum_coordinates = (width - x) + (height - y)
-            # Update koordinat terkecil jika ditemukan nilai intensitas grayscale yang lebih kecil dari sebelumnya
             if sum_coordinates < (width - min_x_same_intensity_hw) + (height - min_y_same_intensity_hw):
                 min_x_same_intensity_hw = x
                 min_y_same_intensity_hw = y
-
-# Tambahkan 3 titik lagi dengan kombinasi yang diminta
-point1 = (min_x_0, min_y_0)
-point2 = (min_x_0w, min_y_0w)
-point3 = (min_x_h0, min_y_h0)
-point4 = (min_x_hw, min_y_hw)
 
 pointa = (min_x_same_intensity, min_y_same_intensity)
 pointb = (min_x_same_intensity_w0, min_y_same_intensity_w0)
 pointc = (min_x_same_intensity_h0, min_y_same_intensity_h0)
 pointd = (min_x_same_intensity_hw, min_y_same_intensity_hw)
-
-nonzero_coords = np.column_stack(np.where(image_array == 255))
 
 # Loop through each point
 points = ['c1', 'c2', 'c3', 'c4']
@@ -296,9 +276,7 @@ for point_name, coordinate in zip(points, min_coordinates):
 
 pts = np.float32([[0, 0], [900, 0], [0, 600], [900, 600]])
 pts2 = np.float32([top_left, top_right, bottom_left, bottom_right])
-
 matrix = cv2.getPerspectiveTransform(pts2,pts)
-
 final = cv2.warpPerspective(resized_image, matrix, (900, 600))
 
 test = np.array(blue_threshold)  
@@ -319,6 +297,5 @@ else:
     akhir = final
 
 cv2.imshow('akhir',akhir)
-
 cv2.waitKey(0)
 cv2.destroyAllWindows
