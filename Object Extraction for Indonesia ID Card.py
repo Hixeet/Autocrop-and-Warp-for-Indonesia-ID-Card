@@ -263,13 +263,12 @@ test_coordinates = find_nearest_coordinates(blue_threshold)
 (min_x_0, min_y_0), (min_x_hw, min_y_hw), (min_x_0w, min_y_0w), (min_x_h0, min_y_h0) = test_coordinates
 
 height2, width2, channel = image.shape
-tolerance = 1
 
 if (
-    min_x_0 <= tolerance and (min_y_0) <= tolerance and
-    (width2 - min_x_hw )<= tolerance and (height2 - min_y_hw) <= tolerance and
-    (width2 - min_x_hw )<= tolerance and (min_y_0) <= tolerance and
-    min_x_0 <= tolerance and (height2 - min_y_hw) <= tolerance
+    min_x_0 <= 1 and (min_y_0) <= 1 and
+    (width2 - min_x_hw )<= 1 and (height2 - min_y_hw) <= 1 and
+    (width2 - min_x_hw )<= 1 and (min_y_0) <= 1 and
+    min_x_0 <= 1 and (height2 - min_y_hw) <= 1
 ):
     akhir = image  
 else:
