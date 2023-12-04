@@ -3,39 +3,20 @@ import cv2
 
 image = cv2.imread("KTP.jpg")
 
-b, g, r = cv2.split(image)
-
-blurred_frame_b = cv2.GaussianBlur(b, (5, 5), 1)
-blurred_frame_r = cv2.GaussianBlur(r, (5, 5), 1)
+blurred_frame_b = cv2.GaussianBlur(image[:,:,0], (5, 5), 1)
+blurred_frame_r = cv2.GaussianBlur(image[:,:,2], (5, 5), 1)
 
 _, blue_threshold = cv2.threshold(blurred_frame_b, 255, 255,  cv2.THRESH_BINARY + cv2.THRESH_OTSU )
 _, red_threshold = cv2.threshold(blurred_frame_r, 200, 255, cv2.THRESH_BINARY)
+combined_threshold = cv2.subtract(blue_threshold, red_threshold)
 
-combined_threshold = cv2.bitwise_or(blue_threshold, red_threshold)
-same_pixels = cv2.bitwise_and(blue_threshold, red_threshold)
-combined_threshold = cv2.subtract(combined_threshold, same_pixels)
-
-def apply_erosion(thresholded_image, kernel_size):
-    kernel = np.ones((kernel_size, kernel_size), np.uint8)
-    eroded_image = cv2.erode(thresholded_image, kernel, iterations=1)
-
-    return eroded_image
-
-thresholded_image = combined_threshold
-
-kernel_size = 2
-
-eroded_image = apply_erosion(thresholded_image, kernel_size)
+kernel = np.ones((2, 2), np.uint8)
+eroded_image = cv2.erode(combined_threshold, kernel, iterations=1)
 
 contours, _ = cv2.findContours(eroded_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
 largest_contour = max(contours, key=cv2.contourArea)
 
-mask = np.zeros_like(b)
-cv2.drawContours(mask, [largest_contour], 0, 255, -1)
-
 x, y, w, h = cv2.boundingRect(largest_contour)
-
 crop_image = image[y:y+h, x:x+w]
 
 height, width, channels = crop_image.shape
@@ -50,24 +31,21 @@ else:
     
 resized_image = cv2.resize(rotated_image, (900, 600))
 
-b2, g2, r2 = cv2.split(resized_image)
-mean_value_b = np.mean(resized_image[b2 > 0])
-print("Mean Value B:", mean_value_b)
+mean_value_b = np.mean(resized_image[resized_image[:,:,0] > 0])
+print("Nilai rata-rata intensitas dari channel B pada KTP:", mean_value_b)
 
 if 150 >= mean_value_b >= 100:
-    blur_frame_b = cv2.GaussianBlur(b2, (5, 5), 1)
+    blur_frame_b = cv2.GaussianBlur(resized_image[:,:,0], (5, 5), 1)
     blur_gray = cv2.GaussianBlur(resized_image, (5, 5), 1)
 elif 200 >= mean_value_b >= 150:
-    blur_frame_b = cv2.GaussianBlur(b2, (5, 5), 1)
+    blur_frame_b = cv2.GaussianBlur(resized_image[:,:,0], (5, 5), 1)
     blur_gray = cv2.GaussianBlur(resized_image, (7, 7), 3)
 else:
-    blur_frame_b = b2
+    blur_frame_b = resized_image[:,:,0]
     blur_gray = cv2.GaussianBlur(resized_image, (5, 5), 1)
 
 gray = cv2.cvtColor(blur_gray, cv2.COLOR_BGR2GRAY)
-
-blur_frame_r = cv2.GaussianBlur(r2, (5, 5), 1)
-blur_frame_g = cv2.GaussianBlur(g2, (5, 5), 1)
+blur_frame_r = cv2.GaussianBlur(resized_image[:,:,2], (5, 5), 1)
 
 # Tentukan nilai threshold untuk kanal biru berdasarkan mean value
 if mean_value_b <= 95:
@@ -88,15 +66,8 @@ else:
 
 _, crop_threshold_b = cv2.threshold(blur_frame_b, threshold_value, 255, cv2.THRESH_BINARY)
 _, crop_threshold_r = cv2.threshold(blur_frame_r, threshold_value_r, 255,  cv2.THRESH_BINARY )
-_, crop_threshold_g = cv2.threshold(blur_frame_g, 109, 255,  cv2.THRESH_BINARY )
 _, threshold_gray = cv2.threshold(gray, 230, 255, cv2.THRESH_BINARY)
-
 combined_threshold2 = cv2.subtract(crop_threshold_b, crop_threshold_r)
-same_pixels = cv2.bitwise_and(crop_threshold_b, crop_threshold_r)
-combined_threshold3 = cv2.subtract(combined_threshold2, same_pixels)
-
-kernal = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 1))
-dilate = cv2.dilate( combined_threshold2, kernal, iterations=1)
 
 def find_nearest_coordinates(image_array):
     # Periksa ukuran gambar
@@ -170,15 +141,14 @@ def find_nearest_coordinates(image_array):
 
     # Mengembalikan koordinat terdekat dari semua empat sudut
     return (min_x_0, min_y_0), (min_x_hw, min_y_hw), (min_x_0w, min_y_0w), (min_x_h0, min_y_h0)
-
-hasil = np.array(dilate) 
-hasil_coordinates = find_nearest_coordinates(hasil)
+ 
+hasil_coordinates = find_nearest_coordinates(combined_threshold2)
 
 # Mengakses nilai-nilai dari luar fungsi
 (min_x_0, min_y_0), (min_x_hw, min_y_hw), (min_x_0w, min_y_0w), (min_x_h0, min_y_h0) = hasil_coordinates
 
 # Loop untuk mencari koordinat terkecil yang memiliki intensitas yang sama dengan point (min_x_0, min_y_0)
-image_array = dilate
+image_array = combined_threshold2
 height, width = image_array.shape
 
 min_x_same_intensity = min_x_0
@@ -221,17 +191,17 @@ for x in range(min_x_hw-10, width, +1):
                 min_x_same_intensity_hw = x
                 min_y_same_intensity_hw = y
 
+
 pointa = (min_x_same_intensity, min_y_same_intensity)
 pointb = (min_x_same_intensity_w0, min_y_same_intensity_w0)
 pointc = (min_x_same_intensity_h0, min_y_same_intensity_h0)
 pointd = (min_x_same_intensity_hw, min_y_same_intensity_hw)
 
-# Loop through each point
 points = ['c1', 'c2', 'c3', 'c4']
 min_coordinate_sums = [float("inf")] * 4
 min_coordinates = [None] * 4
 
-# Loop through each point for threshold_gray
+# Loop untuk mencari seluruh point pada threshold grey
 for point_idx, point_name in enumerate(points[:4]):
     for y in range(height):
         for x in range(width):
@@ -261,7 +231,17 @@ top_right = np.float32(pointb)
 bottom_left = np.float32(pointc)
 bottom_right = np.float32(pointd)
 
-# Print the results for each point
+"""print("\nsudut kiri atas KTP berada pada pixel (x, y)  :", top_left)
+print("sudut kanan atas KTP berada pada pixel (x, y) :", top_right)
+print("sudut kiri bawah KTP berada pada pixel (x, y) :", bottom_left)
+print("sudut kanan bawah KTP berada pada pixel (x, y):", bottom_right)
+
+print("\nsudut kiri atas pantulan cahaya di KTP berada pada pixel (x, y)  :", pointc1)
+print("sudut kanan atas pantulan cahaya di KTP berada pada pixel (x, y) :", pointc2)
+print("sudut kiri bawah pantulan cahaya di KTP berada pada pixel (x, y) :", pointc3)
+print("sudut kanan bawah pantulan cahaya di KTP berada pada pixel (x, y):", pointc4)
+"""
+# Mnemapilkan hasil dari setiap point
 for point_name, coordinate in zip(points, min_coordinates):
     if coordinate is not None:
         x, y = coordinate
@@ -279,8 +259,7 @@ pts2 = np.float32([top_left, top_right, bottom_left, bottom_right])
 matrix = cv2.getPerspectiveTransform(pts2,pts)
 final = cv2.warpPerspective(resized_image, matrix, (900, 600))
 
-test = np.array(blue_threshold)  
-test_coordinates = find_nearest_coordinates(test)
+test_coordinates = find_nearest_coordinates(blue_threshold)
 (min_x_0, min_y_0), (min_x_hw, min_y_hw), (min_x_0w, min_y_0w), (min_x_h0, min_y_h0) = test_coordinates
 
 height2, width2, channel = image.shape
@@ -299,3 +278,4 @@ else:
 cv2.imshow('akhir',akhir)
 cv2.waitKey(0)
 cv2.destroyAllWindows
+
